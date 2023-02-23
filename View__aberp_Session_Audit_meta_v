@@ -1,8 +1,8 @@
-# Name: Session_Audit_meta_v
+# Name: aberp__Session_Audit_meta_v
 # Purpose: Create a view to report in Metabse use logins
 # Created by: Henry Manas, Scope Adam Sawtell
 
-create view Session_Audit_meta_v
+create view aberp_Session_Audit_meta_v
  as 
 select se.ad_client_id,
        ro.ad_role_id,
