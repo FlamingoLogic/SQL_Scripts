@@ -1,0 +1,8 @@
+Delete from r_requestaction where r_request_id in (select r_request_id from r_request where AbERP_Incident_ID = #######);
+Delete from r_request where AbERP_Incident_ID = #######;
+Delete from AbERP_Incident where AbERP_Incident_ID = #######;
+
+Delete from r_requestupdate where r_request_id in (select r_request_id from r_request where AbERP_Incident_ID = #######);
+Delete from r_requestaction where r_request_id in (select r_request_id from r_request where AbERP_Incident_ID = #######);
+Delete from r_request where AbERP_Incident_ID = #######;
+Delete from AbERP_Incident where AbERP_Incident_ID = #######;
