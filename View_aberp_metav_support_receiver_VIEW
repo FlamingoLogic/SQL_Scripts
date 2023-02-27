@@ -1,0 +1,58 @@
+# Name: aberp_metav__session_audit_VIEW
+# Purpose: Create a view to report in Metabase support reciever data sets
+# Scope Adam Sawtell
+# Created by: Christian Gealone
+# Update:
+
+CREATE VIEW adempiere."aberp_metav_support_receiver_VIEW" AS
+ SELECT bp.isactive AS "Active",
+    s.name AS "Status",
+    bp.value AS "Search Key",
+    bp.name AS "Name",
+    g.name AS "Gender",
+    bp.birthday AS "Birthday",
+    bp.aberp_age AS "Age",
+    fb.name AS "Funding Body",
+    d1.name AS "Disability",
+    d2.name AS "Other Disability",
+    pc.name AS "Services",
+    u.name AS "Person Responsible",
+        CASE
+            WHEN ((bp.aberp_aboriginal)::text = 'Ab'::text) THEN 'Aboriginal'::text
+            WHEN ((bp.aberp_aboriginal)::text = 'AbTo'::text) THEN 'Aboriginal and Torres Straight Islander'::text
+            WHEN ((bp.aberp_aboriginal)::text = 'Ne'::text) THEN 'Neither'::text
+            WHEN ((bp.aberp_aboriginal)::text = 'To'::text) THEN 'Torres Straight Islander'::text
+            ELSE NULL::text
+        END AS "Aboriginal/Torres Strait Islander",
+    ca.name AS "Cultural Affiliation",
+        CASE
+            WHEN ((bp.aberp_living_arrangement)::text = 'Al'::text) THEN 'Lives Alone'::text
+            WHEN ((bp.aberp_living_arrangement)::text = 'Fa'::text) THEN 'Lives with Family'::text
+            WHEN ((bp.aberp_living_arrangement)::text = 'Fr'::text) THEN 'Lives with Friends/Housemates'::text
+            ELSE NULL::text
+        END AS "Living Arrangement",
+    bp.aberp_islgbtiqa AS "LGBTIQA+",
+    bp.created AS "Created",
+    bp.updated AS "Updated",
+    s.r_status_id,
+    g.aberp_gender_id,
+    bp.aberp_funding_body_id,
+    d1.aberp_disability_id,
+    d2.aberp_disability_id AS aberp_other_disability_id,
+    pc.m_product_category_id,
+    u.ad_user_id,
+    ca.aberp_cultural_affiliation_id
+   FROM ((((((((((adempiere.c_bpartner bp
+     LEFT JOIN adempiere.r_status s ON ((bp.r_status_id = s.r_status_id)))
+     LEFT JOIN adempiere.aberp_gender g ON ((bp.aberp_gender_id = g.aberp_gender_id)))
+     LEFT JOIN ( SELECT c_bpartner.c_bpartner_id,
+            c_bpartner.name
+           FROM adempiere.c_bpartner) fb ON ((fb.c_bpartner_id = bp.aberp_funding_body_id)))
+     LEFT JOIN adempiere.aberp_disability d1 ON ((bp.aberp_disability_id = d1.aberp_disability_id)))
+     LEFT JOIN LATERAL unnest(bp.aberp_other_disability_id) bp_temp1(aberp_other_disability_id) ON (true))
+     LEFT JOIN adempiere.aberp_disability d2 ON ((bp_temp1.aberp_other_disability_id = d2.aberp_disability_id)))
+     LEFT JOIN LATERAL unnest(bp.aberp_services_id) bp_temp2(aberp_services_id) ON (true))
+     LEFT JOIN adempiere.m_product_category pc ON ((bp_temp2.aberp_services_id = pc.m_product_category_id)))
+     LEFT JOIN adempiere.ad_user u ON ((bp.salesrep_id = u.ad_user_id)))
+     LEFT JOIN adempiere.aberp_cultural_affiliation ca ON ((bp.aberp_cultural_affiliation_id = ca.aberp_cultural_affiliation_id)))
+  WHERE ((bp.isactive = 'Y'::bpchar) AND (bp.aberp_issupport_receiver = 'Y'::bpchar));
