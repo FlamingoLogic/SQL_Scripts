@@ -1,0 +1,20 @@
+# Name: aberp_metav__session_audit_VIEW
+# Purpose: Create a view to report in Metabse use logins
+# Scope Adam Sawtell
+# Created by: Henry Manas
+# Update: Christian Gealone
+
+CREATE VIEW adempiere."aberp_metav_session_audit_VIEW" AS
+ SELECT cl.name AS "Business Name",
+    se.logindate AS "Date Logged In",
+    se.created AS "Date and Time",
+    us.name AS "Employee",
+    ro.name AS "Role",
+    se.remote_addr AS "Login Ip Address",
+    cl.ad_client_id,
+    ro.ad_role_id,
+    us.createdby
+   FROM (((adempiere.ad_session se
+     LEFT JOIN adempiere.ad_client cl ON ((se.ad_client_id = cl.ad_client_id)))
+     LEFT JOIN adempiere.ad_role ro ON ((se.ad_role_id = ro.ad_role_id)))
+     LEFT JOIN adempiere.ad_user us ON ((se.createdby = us.ad_user_id)));
