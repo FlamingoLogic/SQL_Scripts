@@ -1,0 +1,433 @@
+-- Copy and use in phpPgAdmin SQL
+
+-- WARNING - Only execute this script against a temp or development database.
+
+-- DO NOT EXECUTE against a production database.
+
+-- Drop the following indexes to make the updates faster
+
+DROP INDEX IF EXISTS ad_user_email;
+
+
+-- User
+
+UPDATE AD_User SET
+  Email = 'test@idempiere.com',
+  Phone = '512 555-5555',
+  Phone2 = NULL,
+  Fax = NULL,
+  EmailUserPW = NULL,
+  EmailUser = NULL,
+  EmailVerify = NULL,
+  Birthday = NULL
+WHERE ad_client_id NOT IN (11,0);
+
+
+UPDATE AD_User SET
+  Password = 'flamingo',
+  Email = LEFT('system@idempiere.com', 20),
+  EmailUser = CASE WHEN EmailUser IS NOT NULL THEN LEFT('system@idempiere.com', 20) ELSE NULL END
+WHERE name IN ('System', 'SuperUser', 'WebServiceUser');
+
+
+-- Disable all schedulers
+UPDATE ad_scheduler SET isactive = 'N';
+
+-- Clean up Business Partners
+UPDATE C_BPartner SET 
+  description = NULL, 
+  name2 = NULL, 
+  taxId = NULL, 
+  url = NULL
+WHERE ad_client_id NOT IN (11,0);
+
+-- AbERP Business Partner Bank Accounts
+UPDATE C_BP_BankAccount SET 
+  a_name = 'AbERP_anon', 
+  a_street = '2 Ability St',
+  a_city = 'New York',
+  a_state = 'NY',
+  a_zip = '10007',
+  a_ident_dl = 'test',
+  a_email = LEFT('test@idempiere.com', 20),  -- truncated to 20 characters
+  a_ident_ssn = 'test',
+  a_country = 'test',
+  customerpaymentprofileid = 'test',
+  creditcardnumber = 'test',
+  routingno = 'test',
+  accountno = 'test',
+  creditcardvv = 'test',
+  creditcardexpmm = 1,
+  creditcardexpyy = 1
+WHERE ad_client_id NOT IN (11,0);
+
+
+-- AnonData Business Partner Locations
+UPDATE C_BPartner_Location SET 
+  name = 'bplocation' || c_bpartner_location_id, 
+  Phone = '123456789', 
+  Phone2 = NULL, 
+  Fax = NULL
+WHERE ad_client_id NOT IN (11,0);
+
+-- AbERP AnonData AbERP Support Receiver (BP)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'anon_seq') THEN
+        CREATE SEQUENCE anon_seq START 1;
+    END IF;
+END
+$$;
+
+DROP TABLE IF EXISTS tmp_anon_map;
+CREATE TEMP TABLE tmp_anon_map AS
+SELECT
+    C_BPartner_ID,
+    nextval('anon_seq') AS anon_num
+FROM C_BPartner;
+
+UPDATE C_BPartner t
+SET
+    name = 'AbER' || m.anon_num,
+    aberp_first_name = 'AbER' || m.anon_num,
+    aberp_last_name = 'AbER' || m.anon_num,
+    aberp_preferred_name = 'AbER' || m.anon_num,
+    aberp_middle_name = 'AbER' || m.anon_num,
+    phone = '0400000' || LPAD(m.anon_num::text, 3, '0'),
+    phone2 = '0400000' || LPAD(m.anon_num::text, 3, '0'),
+    email = 'user' || m.anon_num || '@example.com',
+    aberp_ndis_region = 'Region' || m.anon_num,
+    logo_id = NULL
+FROM tmp_anon_map m
+WHERE t.C_BPartner_ID = m.C_BPartner_ID;
+
+UPDATE AD_User au
+SET name = 'AbER' || m.anon_num
+FROM tmp_anon_map m
+WHERE au.C_BPartner_ID = m.C_BPartner_ID;
+
+-- AbERP AnonData all activities
+UPDATE C_ContactActivity
+SET
+    Description = 'Anonymised by AbERP',
+    Comments = 'Anonymised by AbERP';
+
+-- AbERP Clean up Bp Associations
+UPDATE AbERP_BP_Associations
+SET Name = 'Anonymised by AbERP';
+
+-- AbERP AnonData Plans and Assessments - Support Plans
+UPDATE adempiere.aberp_supportplans
+SET
+  description = 'Anonymised by AbERP',
+  aberp_importanttome = 'Anonymised by AbERP',
+  aberp_supported = 'Anonymised by AbERP',
+  aberp_hobbie = 'Anonymised by AbERP',
+  aberp_cultural_needs = 'Anonymised by AbERP',
+  aberp_likes = 'Anonymised by AbERP',
+  aberp_dislikes = 'Anonymised by AbERP',
+  aberp_others_me = 'Anonymised by AbERP',
+  aberp_relaxation = 'Anonymised by AbERP',
+  aberp_cause_of_stress = 'Anonymised by AbERP',
+  aberp_am_routine = 'Anonymised by AbERP',
+  aberp_day_routine = 'Anonymised by AbERP',
+  aberp_pm_routine = 'Anonymised by AbERP',
+  aberp_night_routine = 'Anonymised by AbERP',
+  aberp_weekly_routine = 'Anonymised by AbERP',
+  aberp_others_routine = 'Anonymised by AbERP',
+  aberp_details_routine = 'Anonymised by AbERP',
+  aberp_toilet_use = 'Anonymised by AbERP',
+  aberp_dressing = 'Anonymised by AbERP',
+  aberp_shaving = 'Anonymised by AbERP',
+  aberp_showering = 'Anonymised by AbERP',
+  aberp_hair_care = 'Anonymised by AbERP',
+  aberp_oral_hygiene = 'Anonymised by AbERP',
+  aberp_menstrual = 'Anonymised by AbERP',
+  aberp_other_personal_care = 'Anonymised by AbERP',
+  aberp_details_household = 'Anonymised by AbERP',
+  aberp_dietary_allergies = 'Anonymised by AbERP',
+  aberp_favourite_foods = 'Anonymised by AbERP',
+  aberp_disliked_foods = 'Anonymised by AbERP',
+  aberp_communication_device = 'Anonymised by AbERP',
+  aberp_others_household = 'Anonymised by AbERP',
+  aberp_gardening = 'Anonymised by AbERP',
+  aberp_grocery = 'Anonymised by AbERP',
+  aberp_laundry = 'Anonymised by AbERP',
+  aberp_makebed = 'Anonymised by AbERP',
+  aberp_nail_care = 'Anonymised by AbERP',
+  aberp_sleeping = 'Anonymised by AbERP',
+  aberp_travellingbeh = 'Anonymised by AbERP',
+  aberp_personcommbeh = 'Anonymised by AbERP',
+  aberp_menuplanning = 'Anonymised by AbERP',
+  aberp_support_plans_provided_to = 'Anonymised by AbERP',
+  aberp_cleaning = 'Anonymised by AbERP',
+  aberp_cooking = 'Anonymised by AbERP',
+  aberp_comm_describe = 'Anonymised by AbERP',
+  aberp_transport_arr = 'Anonymised by AbERP',
+  aberp_others_meals = 'Anonymised by AbERP',
+  aberp_mobility_detail = 'Anonymised by AbERP',
+  aberp_details = 'Anonymised by AbERP',
+  hco_support_plan_important_relationships = 'Anonymised by AbERP',
+  aberp_strategies = 'Anonymised by AbERP',
+  aberp_behaviour_description = 'Anonymised by AbERP',
+  aberp_medical_history = 'Anonymised by AbERP',
+  hco_support_plan_health_comm = 'Anonymised by AbERP';
+
+-- AbERP AnonData Consent and Legal
+UPDATE adempiere.aberp_consent_legal
+SET
+  aberp_order_number = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP';
+
+-- AbERP AnonData Restrictive Practices
+UPDATE adempiere.aberp_restrictive_practices
+SET
+  aberp_authorisation_status = 'Anonymised by AbERP',
+  aberp_consent = 'Anonymised by AbERP',
+  aberp_describe_behaviour = 'Anonymised by AbERP',
+  aberp_describe_practice = 'Anonymised by AbERP',
+  aberp_frequency = 'Anonymised by AbERP',
+  aberp_other = 'Anonymised by AbERP',
+  aberp_other_medication = 'Anonymised by AbERP',
+  aberp_other_strategies = 'Anonymised by AbERP',
+  aberp_plan_reduce_res_prac = 'Anonymised by AbERP',
+  aberp_provide_details = 'Anonymised by AbERP',
+  aberp_reason_res_practice = 'Anonymised by AbERP',
+  aberp_reference_number = 'Anonymised by AbERP',
+  comments = 'Anonymised by AbERP',
+  name = 'Anonymised by AbERP';
+
+-- AbERP AnonData Alerts
+UPDATE adempiere.aberp_alert_sr
+SET
+  description = 'Anonymised by AbERP',
+  name = 'Anonymised by AbERP',
+  value = 'Anonymised by AbERP';
+
+-- AbERP AnonData Incident Reports
+UPDATE adempiere.aberp_incident
+SET
+  aberp_detail_consultation = 'Anonymised by AbERP',
+  aberp_follow_up = 'Anonymised by AbERP',
+  aberp_guardian_notification = 'Anonymised by AbERP',
+  aberp_hospital_name = 'Anonymised by AbERP',
+  aberp_incident_action_response = 'Anonymised by AbERP',
+  aberp_incident_action_taken = 'Anonymised by AbERP',
+  aberp_incident_before_event = 'Anonymised by AbERP',
+  aberp_incident_impact = 'Anonymised by AbERP',
+  aberp_next_steps = 'Anonymised by AbERP',
+  aberp_other = 'Anonymised by AbERP',
+  aberp_police_outcome = 'Anonymised by AbERP',
+  aberp_response_taken = 'Anonymised by AbERP',
+  aberp_risk_assessment = 'Anonymised by AbERP',
+  aberp_witness_contactdetails = 'Anonymised by AbERP',
+  aberp_witness_name = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP';
+
+UPDATE adempiere.ad_column
+SET isactive = 'N'
+WHERE ad_column_id = 1000052;
+
+UPDATE adempiere.aberp_incidentline
+SET
+  aberp_first_aid_details = 'Anonymised by AbERP',
+  aberp_incident_details = 'Anonymised by AbERP',
+  aberp_incident_type_reason = 'Anonymised by AbERP';
+
+UPDATE adempiere.aberp_contactactivity
+SET
+  comments = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP';
+
+-- AbERP AnonData Credential Assignment
+UPDATE adempiere.aberp_credentialassignment
+SET
+  comments = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP',
+  name = 'Anonymised by AbERP',
+  value = 'Anonymised by AbERP';
+
+-- AbERP AnonData Ropstered Shift
+UPDATE adempiere.aberp_rostered_shift
+SET
+  aberp_passive = 'Anonymised by AbERP',
+  aberp_support_end_day = 'Anonymised by AbERP',
+  aberp_support_ratio = 'Anonymised by AbERP',
+  aberp_support_start_day = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP',
+  name = 'Anonymised by AbERP',
+  documentno = 'Anonymised by AbERP';
+
+-- AbERP AnonData Timesheets
+UPDATE adempiere.aberp_timesheetandexpenses
+SET
+  aberp_other = 'Anonymised by AbERP',
+  aberp_passive = 'Anonymised by AbERP',
+  aberp_support_end_day = 'Anonymised by AbERP',
+  aberp_support_start_day = 'Anonymised by AbERP',
+  aberp_vehiclerego = 'Anonymised by AbERP',
+  aberp_whyreceiptisn = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP',
+  documentno = 'Anonymised by AbERP',
+  name = 'Anonymised by AbERP';
+
+-- AbERP AnonData Service Agreements and Lines c_Project
+UPDATE adempiere.c_project
+SET
+  description = 'Anonymised by AbERP',
+  name = 'Anonymised by AbERP',
+  note = 'Anonymised by AbERP',
+  value = 'Anonymised-' || c_project_id;
+
+UPDATE adempiere.c_projectline
+SET
+  aberp_portal_service_booking = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP',
+  name = 'Anonymised-' || LEFT(c_projectline_id::text, 20);
+
+UPDATE adempiere.c_order
+SET
+  aberp_available_balance = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP',
+  documentno = 'Anonymised-' || LEFT(c_order_id::text, 20),
+  ordertype = 'Anonymised by AbERP',
+  promotioncode = 'Anonymised by AbERP';
+
+UPDATE adempiere.c_orderline
+SET
+  aberp_cancellation_reason = 'Anonymised by AbERP',
+  aberp_support_ratio = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP';  -- Fixed here
+
+-- AnonData Locations
+UPDATE C_Location SET 
+  Address1 = '1 Ability St', 
+  Address2 = '#1', 
+  Address3 = NULL, 
+  Address4 = NULL,
+  city = 'AbilityERP',
+  postal = '1234',
+  c_region_id = 108,
+  c_country_id = 100
+WHERE ad_client_id NOT IN (11,0);
+
+UPDATE adempiere.c_bankaccount
+SET
+  name = LEFT('Anonymised by AbERP --- Bank Accounts', 20),
+  accountno = LEFT('AnonBankAcct: ' || c_bankaccount_id, 20)
+WHERE ad_client_id NOT IN (11, 0);
+
+-- Clean Payment Transactions
+UPDATE C_PaymentTransaction SET 
+  description = 'test',
+  a_city = 'New York',
+  a_country = 'US',
+  a_email = 'test@idempiere.com',
+  a_ident_dl = 'test',
+  a_ident_ssn = 'test',
+  a_name = 'test',
+  a_state = 'NY',
+  a_zip = '10007',
+  accountno = 'test',
+  creditcardexpmm = 1,
+  creditcardexpyy = 1,
+  creditcardnumber = 'test',
+  creditcardvv = 'test',
+  ponum = 'test',
+  r_authcode = 'test',
+  r_info = 'test',
+  r_pnref = 'test',
+  r_respmsg = 'test',
+  r_result = 'test',
+  r_voidmsg = 'test',
+  routingno = 'test',
+  voiceauthcode = 'test'
+WHERE ad_client_id NOT IN (11,0);
+
+-- Clean Payments
+UPDATE c_payment SET 
+  description = 'test',
+  a_city = 'New York',
+  a_country = 'NY',
+  a_email = 'test@idempiere.com',
+  a_ident_dl = 'test',
+  a_ident_ssn = 'test',
+  a_name = 'test',
+  a_state = 'NY',
+  a_zip = '10007',
+  accountno = 'test',
+  creditcardexpmm = 1,
+  creditcardexpyy = 1,
+  creditcardnumber = 'test',
+  creditcardvv = 'test',
+  ponum = 'test',
+  r_authcode = 'test',
+  r_info = 'test',
+  r_pnref = 'test',
+  r_respmsg = 'test',
+  r_result = 'test',
+  r_voidmsg = 'test',
+  routingno = 'test',
+  voiceauthcode = 'test'
+WHERE ad_client_id NOT IN (11,0);
+
+-- SMTP settings
+UPDATE ad_client SET 
+  smtphost = '', 
+  requestemail = '', 
+  requestuser = '', 
+  requestuserpw = '',
+  IsSmtpAuthorization = 'N',
+  IsSecureSMTP = 'N';
+
+-- Anonymise C_Bank data
+UPDATE C_Bank SET
+  Name = 'Test Bank ' || C_Bank_ID,
+  Description = 'Test Description',
+  RoutingNo = '000000000',
+  SwiftCode = 'TESTSWFT'
+WHERE ad_client_id NOT IN (11,0);
+
+-- AbERP AnonData Invoice and Lines _C_Invoice
+UPDATE adempiere.c_invoice
+SET
+  aberp_ndis_region = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP',
+  documentno = 'Anonymised-' || c_invoice_id
+WHERE ad_client_id NOT IN (11, 0);
+
+UPDATE adempiere.c_invoiceline
+SET
+  aberp_cancellation_reason = 'Anonymised by AbERP',
+  description = 'Anonymised by AbERP'
+WHERE ad_client_id NOT IN (11, 0);
+
+-- Recreate index
+CREATE INDEX ad_user_email ON ad_user USING btree (email);
+
+-- AbERP AnonData Requests and History
+UPDATE adempiere.r_request
+SET
+  aberp_instruction = 'Anonymised by AbERP',
+  aberp_urllink = 'Anonymised by AbERP',
+  lastresult = 'Anonymised by AbERP',
+  result = 'Anonymised by AbERP',
+  summary = 'Anonymised by AbERP',
+  documentno = 'Anonymised-' || r_request_id
+WHERE ad_client_id NOT IN (11, 0);
+
+UPDATE adempiere.r_requestupdate
+SET
+  result = 'Anonymised by AbERP'
+WHERE ad_client_id NOT IN (11, 0);
+
+-- Anonymise emails in requests
+UPDATE R_Request SET 
+  Result = CASE WHEN Result IS NULL THEN NULL ELSE regexp_replace(Result, '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', 'Result@test.com', 'g') END,
+  Summary = CASE WHEN Summary IS NULL THEN NULL ELSE regexp_replace(Summary, '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', 'Summary@test.com', 'g') END,
+  LastResult = CASE WHEN LastResult IS NULL THEN NULL ELSE regexp_replace(LastResult, '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', 'LastResult@test.com', 'g') END
+WHERE Summary IS NOT NULL OR Result IS NOT NULL OR LastResult IS NOT NULL;
+
+UPDATE R_RequestUpdate SET 
+  Result = CASE WHEN Result IS NULL THEN NULL ELSE regexp_replace(Result, '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', 'Result@test.com', 'g') END
+WHERE Result IS NOT NULL;
